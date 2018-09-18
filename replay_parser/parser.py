@@ -1,4 +1,4 @@
-from io import RawIOBase, BytesIO
+from io import RawIOBase
 from struct import unpack
 from typing import Union, Dict, Any, Tuple
 
@@ -34,7 +34,7 @@ def read_lua_format(data: bytearray, offset: int) -> Tuple[Union[int, float, str
     """
     Reads struct format
     """
-    type_, offset = read_number(data, offset, type_="b", size=1)
+    type_, offset = read_number(data, offset, type_="B", size=1)
 
     if type_ == LuaType.NUMBER:
         return read_number(data, offset, type_="f", size=4)
@@ -43,13 +43,13 @@ def read_lua_format(data: bytearray, offset: int) -> Tuple[Union[int, float, str
     elif type_ == LuaType.NIL:
         return None, offset + 1
     elif type_ == LuaType.BOOL:
-        value, offset = read_number(data, offset, type_="b", size=1)
+        value, offset = read_number(data, offset, type_="B", size=1)
         return value == 1, offset
     elif type_ == LuaType.LUA:
         result = {}
 
         while True:
-            value, offset = read_number(data, offset, type_="b", size=1)
+            value, offset = read_number(data, offset, type_="B", size=1)
             if value == LuaType.LUA_END:
                 break
 
@@ -94,7 +94,7 @@ def parse_header(data: bytearray):
     mods, offset = read_lua_format(data, offset)
     scenario_size, offset = read_number(data, offset)
     scenario, offset = read_lua_format(data, offset)
-    sources_number, offset = read_number(data, offset, type_="b", size=1)
+    sources_number, offset = read_number(data, offset, type_="B", size=1)
 
     players = {}
     for i in range(sources_number):
@@ -102,14 +102,14 @@ def parse_header(data: bytearray):
         player_id, offset = read_number(data, offset)
         players[name] = str(player_id)
 
-    cheats_enabled, offset = read_number(data, offset, type_="b", size=1)
-    numbers_of_armies, offset = read_number(data, offset, type_="b", size=1)
+    cheats_enabled, offset = read_number(data, offset, type_="B", size=1)
+    numbers_of_armies, offset = read_number(data, offset, type_="B", size=1)
 
     armies = {}
     for i in range(numbers_of_armies):
         player_data_size, offset = read_number(data, offset, size=4)
         player_data, offset = read_lua_format(data, offset)
-        player_source, offset = read_number(data, offset, type_="b", size=1)
+        player_source, offset = read_number(data, offset, type_="B", size=1)
         armies[player_source] = player_data
 
         if player_source != 255:
