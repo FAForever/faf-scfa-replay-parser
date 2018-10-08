@@ -1,4 +1,14 @@
-# faf-replay-parser
-Supreme Commander Forged alliance replay parser.
+# Supreme Commander Forged alliance replay parser.
 
-Only header parser is implemented. Body is not implemented.
+
+
+Format
+------
+Describe structure please
+
+Tools
+-----
+1. library
+2. tool for replay parsing
+3. analyze tool
+4. desync finder
