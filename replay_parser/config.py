@@ -4,7 +4,7 @@ from functools import wraps
 DEBUG = bool(os.getenv("SCFA_PARSER_DEBUG", False))
 
 
-def debug(func) -> function:
+def debug(func):
     """
     Used for functions debug call
     """
