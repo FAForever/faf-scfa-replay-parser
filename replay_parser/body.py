@@ -29,16 +29,16 @@ class ReplayBody:
         self.previous_checksum = None
         self.parse_until_desync = kwargs.get('parse_until_desync', False)
 
-    def get_body(self):
+    def get_body(self) -> List:
         return self.body
 
-    def get_messages(self):
+    def get_messages(self) -> Dict:
         return self.messages
 
-    def get_last_players_ticks(self):
+    def get_last_players_ticks(self) -> Dict:
         return self.last_players_tick
 
-    def get_desync_tics(self):
+    def get_desync_tics(self) -> List:
         return self.desync_ticks
 
     def parse(self) -> None:
