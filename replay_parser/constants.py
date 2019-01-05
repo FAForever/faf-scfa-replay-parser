@@ -166,7 +166,6 @@ class CommandStates:
 # }
 
 
-
 CommandStateNames = [
     "Advance",
     "SetCommandSource",

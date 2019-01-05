@@ -1,6 +1,5 @@
 from typing import Tuple, Optional, List
 
-from replay_parser.config import debug
 from replay_parser.constants import TargetType, CommandStates
 from replay_parser.reader import ReplayReader, TYPE_LUA
 
@@ -12,12 +11,10 @@ TYPE_FORMATION = Tuple[float, float, float, float, float]
 TYPE_TARGET = Tuple[int, Optional[int], Optional[TYPE_VECTOR]]
 
 
-@debug
 def _read_vector(reader: ReplayReader) -> TYPE_VECTOR:
     return reader.read_float(), reader.read_float(), reader.read_float()
 
 
-@debug
 def command_nop(reader: ReplayReader) -> None:
     """
     No operation. Shortcut for some commands
@@ -25,23 +22,19 @@ def command_nop(reader: ReplayReader) -> None:
     return None
 
 
-@debug
 def command_advance(reader: ReplayReader) -> int:
     return reader.read_int()
 
 
-@debug
 def command_set_command_source(reader: ReplayReader) -> int:
     return reader.read_byte()
 
 
-@debug
 def command_verify_checksum(reader: ReplayReader) -> Tuple[str, int]:
     checksum = "".join("{:02X}".format(ord(reader.read(1))) for _ in range(16))
     return checksum, reader.read_int()
 
 
-@debug
 def command_create_unit(reader: ReplayReader) -> Tuple[int, str, TYPE_VECTOR]:
     army_index = reader.read_byte()
     blueprint_id = reader.read_string()
@@ -49,22 +42,18 @@ def command_create_unit(reader: ReplayReader) -> Tuple[int, str, TYPE_VECTOR]:
     return army_index, blueprint_id, (x, y, heading)
 
 
-@debug
 def command_create_prop(reader: ReplayReader) -> Tuple[str, TYPE_VECTOR]:
     return reader.read_string(), _read_vector(reader)
 
 
-@debug
 def command_destroy_entity(reader: ReplayReader) -> int:
     return reader.read_int()
 
 
-@debug
 def command_warp_entity(reader: ReplayReader) -> Tuple[int, TYPE_VECTOR]:
     return reader.read_int(), _read_vector(reader)
 
 
-@debug
 def command_process_info_pair(reader: ReplayReader) -> Tuple[int, str, str]:
     entity_id = reader.read_int()
     arg1 = reader.read_string()
@@ -72,7 +61,6 @@ def command_process_info_pair(reader: ReplayReader) -> Tuple[int, str, str]:
     return entity_id, arg1, arg2
 
 
-@debug
 def _parse_entity_ids_set(reader: ReplayReader) -> Tuple[int, List[int]]:
     units_number = reader.read_int()
     unit_ids = []
@@ -81,7 +69,6 @@ def _parse_entity_ids_set(reader: ReplayReader) -> Tuple[int, List[int]]:
     return units_number, unit_ids
 
 
-@debug
 def _parse_formation(reader: ReplayReader) -> Optional[TYPE_FORMATION]:
     formation = reader.read_int()
     if formation != -1:
@@ -92,7 +79,6 @@ def _parse_formation(reader: ReplayReader) -> Optional[TYPE_FORMATION]:
     return None
 
 
-@debug
 def _parse_target(reader: ReplayReader) -> TYPE_TARGET:
     target = reader.read_byte()
     entity_id = None
@@ -107,7 +93,6 @@ def _parse_target(reader: ReplayReader) -> TYPE_TARGET:
     return target, entity_id, position
 
 
-@debug
 def _parse_command_data(reader: ReplayReader):
     command_id = reader.read_int()
     reader.read(4)
@@ -129,7 +114,6 @@ def _parse_command_data(reader: ReplayReader):
     return command_id, command_type, sti_target, formation, blueprint_id, cells
 
 
-@debug
 def command_issue(reader: ReplayReader):
     units_number, unit_ids = _parse_entity_ids_set(reader)
     cmd_data = _parse_command_data(reader)
@@ -137,22 +121,18 @@ def command_issue(reader: ReplayReader):
     return unit_ids, cmd_data
 
 
-@debug
 def command_command_count(reader: ReplayReader) -> Tuple[int, int]:
     return reader.read_int(), reader.read_int()
 
 
-@debug
 def command_set_command_target(reader: ReplayReader) -> Tuple[int, TYPE_TARGET]:
     return reader.read_int(), _parse_target(reader)
 
 
-@debug
 def command_set_command_type(reader: ReplayReader) -> Tuple[int, int]:
     return reader.read_int(), reader.read_byte()
 
 
-@debug
 def command_set_command_cells(reader: ReplayReader) -> Tuple[int, TYPE_LUA, TYPE_VECTOR]:
     command_id = reader.read_int()
     cells = reader.read_lua()
@@ -162,12 +142,10 @@ def command_set_command_cells(reader: ReplayReader) -> Tuple[int, TYPE_LUA, TYPE
     return command_id, cells, vector
 
 
-@debug
 def command_remove_from_queue(reader: ReplayReader) -> Tuple[int, int]:
     return reader.read_int(), reader.read_int()
 
 
-@debug
 def command_debug_command(reader: ReplayReader) -> Tuple[str, TYPE_VECTOR, int, List[int]]:
     debug_command = reader.read_string()
     vector = _read_vector(reader)
@@ -176,13 +154,11 @@ def command_debug_command(reader: ReplayReader) -> Tuple[str, TYPE_VECTOR, int, 
     return debug_command, vector, focus_army_index, unit_ids
 
 
-@debug
 def command_execute_lua_in_sim(reader: ReplayReader) -> str:
     return reader.read_string()
 
 
-@debug
-def command_lua_sim_callback(reader):
+def command_lua_sim_callback(reader: ReplayReader):
     lua_name = reader.read_string()
     lua = reader.read_lua()
     if lua:

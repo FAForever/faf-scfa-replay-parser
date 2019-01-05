@@ -2,8 +2,6 @@ from io import RawIOBase, BytesIO, SEEK_CUR, SEEK_END
 from struct import unpack
 from typing import Union, Dict
 
-from .config import debug
-
 __all__ = ('ReplayReader', 'TYPE_LUA')
 
 TYPE_LUA = Union[int, float, str, bool, None, Dict]
@@ -11,21 +9,28 @@ TYPE_LUA = Union[int, float, str, bool, None, Dict]
 
 class ReplayReader:
     """
-    Class that handles reading data from stream.
+    Class that handles reading data from stream and provides basic methods for parsing
     """
 
-    def __init__(self, input_data: Union[RawIOBase, BytesIO, bytearray, bytes]) -> None:
+    def __init__(
+            self,
+            input_data: Union[RawIOBase, BytesIO, bytearray, bytes],
+            no_copy_data_source: bool=False,
+            **kwargs
+    ) -> None:
         self.data: BytesIO = None
         if isinstance(input_data, (RawIOBase, BytesIO)):
             # copy data and move back to previous position
             position = input_data.tell()
             input_data.seek(0)
-            self.data = BytesIO(input_data.read())  # copy data
+            if no_copy_data_source:
+                self.data = input_data
+            else:
+                self.data = BytesIO(input_data.read())  # copy data
             input_data.seek(position)
         elif isinstance(input_data, (bytes, bytearray)):
             self.data = BytesIO(input_data)  # copy data
 
-    @debug
     def read_string(self) -> str:
         """
         Parses string from binary data.
@@ -45,23 +50,21 @@ class ReplayReader:
         value = unpack(type_, self.data.read(size))[0]
         return value
 
-    @debug
     def read_int(self) -> int:
         return self.read_number(type_="i", size=4)
 
-    @debug
+    def read_short(self) -> int:
+        return self.read_number(type_="h", size=2)
+
     def read_float(self) -> float:
         return self.read_number(type_="f", size=4)
 
-    @debug
     def read_byte(self) -> int:
         return self.read_number(type_="B", size=1)
 
-    @debug
     def read_bool(self) -> bool:
         return self.read_byte() != 0
 
-    @debug
     def read_nil(self) -> None:
         """
         Moves head forward
@@ -69,7 +72,6 @@ class ReplayReader:
         self.data.read(1)
         return None
 
-    @debug
     def read_dict(self) -> Dict:
         """
         Reads more complex structure as dict
@@ -103,7 +105,6 @@ class ReplayReader:
 
         raise ValueError("Uknown data type {} in lua format".format(type_))
 
-    @debug
     def peek_byte(self) -> int:
         """
         Peek for next byte value
@@ -112,21 +113,18 @@ class ReplayReader:
         self.data.seek(-1, SEEK_CUR)
         return value
 
-    @debug
     def read(self, size=1) -> bytes:
         """
         Moves head forward
         """
         return self.data.read(size)
 
-    @debug
     def offset(self) -> int:
         """
         Returns internal pointer position
         """
         return self.data.tell()
 
-    @debug
     def size(self) -> int:
         """
         Returns size of buffer
