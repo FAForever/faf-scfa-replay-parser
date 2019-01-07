@@ -69,7 +69,7 @@ class ReplayBody:
 
         replay format:
             1. byte for command 0-255
-            2. 2 bytes for size of command 0 - 65,535
+            2. 2 bytes for size of command 0 - 65535
             3. content of command
         """
         while self.reader.offset() < self.reader.size():
@@ -86,7 +86,7 @@ class ReplayBody:
                 else:
                     self.reader.read(command_length)
                 read_length = command_length + 3  # read_byte + read_short + command_length
-            yield self.tick, read_length
+            yield self.tick, command_type, read_length
 
     def parse_next_command(self, command_type: int, command_length: int) -> None:
         command_parser = COMMAND_PARSERS[command_type]
