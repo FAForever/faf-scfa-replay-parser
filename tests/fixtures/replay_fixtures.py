@@ -21,7 +21,7 @@ def replay_file_name(request):
     return request.param
 
 
-@pytest.fixture(params=[BytesIO, bytearray, bytes])
+@pytest.fixture(params=[BytesIO, bytearray, bytes])  # TODO: add FileIO
 def replays(request, replay_file_name):
     output_type = request.param
     with open(replay_file_name, "rb") as f:

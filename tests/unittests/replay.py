@@ -1,14 +1,17 @@
 from replay_parser.replay import parse, get_body_parser
 
 
-def test_replay_parse(replays):
+def test_replay_parse(replays, replay_file_name):
     data = parse(replays)
     assert "header" in data
     assert "body" in data
     assert "body_offset" in data
     assert "messages" in data
     assert "desync_ticks" in data
-    assert not data['desync_ticks'], data['desync_ticks']
+    if "8748707" in replay_file_name:
+        assert 9105 in data['desync_ticks'], data['desync_ticks']
+    else:
+        assert not data['desync_ticks'], data['desync_ticks']
 
 
 def test_replay_header_parse(replays):

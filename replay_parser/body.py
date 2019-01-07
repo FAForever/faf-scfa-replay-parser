@@ -66,11 +66,16 @@ class ReplayBody:
         """
         Parses command until it can. Should be used as iterator.
         Yields game tick.
+
+        replay format:
+            1. byte for command 0-255
+            2. 2 bytes for size of command 0 - 65,535
+            3. content of command
         """
         while self.reader.offset() < self.reader.size():
             if self.parse_until_desync and self.desync_ticks:
                 break
-
+            read_length = 0
             command_type = self.reader.read_byte()
             if self.reader.offset() + 2 < self.reader.size():
                 command_length = self.reader.read_short()
@@ -80,7 +85,8 @@ class ReplayBody:
                     self.parse_next_command(command_type, command_length)
                 else:
                     self.reader.read(command_length)
-            yield self.tick
+                read_length = command_length + 3  # read_byte + read_short + command_length
+            yield self.tick, read_length
 
     def parse_next_command(self, command_type: int, command_length: int) -> None:
         command_parser = COMMAND_PARSERS[command_type]
