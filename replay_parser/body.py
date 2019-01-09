@@ -14,14 +14,14 @@ class ReplayBody:
     """
     def __init__(
             self,
-            stream: ReplayReader,
+            reader: ReplayReader,
             parse_until_desync: bool = False,
             parse_commands: set = None,
             store_body: bool = False,
             **kwargs
     ) -> None:
         """
-        :param ReplayReader stream: Handles basic operations on stream
+        :param ReplayReader reader: Handles basic operations on stream
         :param bool parse_until_desync: stops parsing at first desync
         :param set parse_commands: set or list of commands ids to parse,
             list is defined in from `replay_parser.commands.COMMAND_PARSERS`.
@@ -29,7 +29,7 @@ class ReplayBody:
         :param bool store_body: stores every next tick data of replay to content to self.body.
             To get list of commands use get_body
         """
-        self.reader: ReplayReader = stream
+        self.reader: ReplayReader = reader
 
         self.body: List = []
         self.last_players_tick: Dict = {}
@@ -80,12 +80,12 @@ class ReplayBody:
             if self.reader.offset() + 2 < self.reader.size():
                 command_length = self.reader.read_short()
 
-                if self.can_parse_command(command_type) and \
-                   self.reader.offset() + command_length <= self.reader.size():
-                    self.parse_next_command(command_type, command_length)
-                else:
-                    self.reader.read(command_length)
-                read_length = command_length + 3  # read_byte + read_short + command_length
+                if self.reader.offset() + command_length <= self.reader.size():
+                    if self.can_parse_command(command_type):
+                        self.parse_next_command(command_type, command_length)
+                    else:
+                        self.reader.read(command_length)
+                    read_length = command_length + 3  # read_byte + read_short + command_length
             yield self.tick, command_type, read_length
 
     def parse_next_command(self, command_type: int, command_length: int) -> None:

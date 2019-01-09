@@ -24,8 +24,8 @@ def test_replay_header_parse(replays):
 
 
 def test_continuous_parse(replays):
-    parser = get_body_parser(replays, parse_header=True, parse_commands=[0, 3])
-    for _ in parser.continuous_parse():
+    parser = get_body_parser(replays, parse_header=True)
+    for tick, command_type, read_length in parser.continuous_parse():
         pass
 
 
