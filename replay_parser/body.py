@@ -1,9 +1,9 @@
-from typing import List, Dict, Any, Iterable
+from io import RawIOBase
+from typing import List, Dict, Any, Iterator, Tuple, Optional, Union
 
 from replay_parser.commands import COMMAND_PARSERS
-from replay_parser.config import DEBUG
 from replay_parser.constants import CommandStates, CommandStateNames
-from replay_parser.reader import ReplayReader
+from replay_parser.reader import ReplayReader, ACCEPTABLE_DATA_TYPE
 
 __all__ = ('ReplayBody',)
 
@@ -29,7 +29,7 @@ class ReplayBody:
         :param bool store_body: stores every next tick data of replay to content to self.body.
             To get list of commands use get_body
         """
-        self.reader: ReplayReader = reader
+        self.replay_reader: ReplayReader = reader
 
         self.body: List = []
         self.last_players_tick: Dict = {}
@@ -42,6 +42,7 @@ class ReplayBody:
 
         self.previous_tick = -1
         self.previous_checksum = None
+
         self.parse_until_desync = bool(parse_until_desync)
         self.parse_commands = set(parse_commands or set())
         self.store_body = bool(store_body)
@@ -59,60 +60,110 @@ class ReplayBody:
         return self.desync_ticks
 
     def parse(self) -> None:
+        """
+        Parses all replay data
+        """
         for _ in self.continuous_parse():
             pass
 
-    def continuous_parse(self) -> Iterable:
+    def continuous_parse(self, data: ACCEPTABLE_DATA_TYPE = None) -> Iterator:
         """
-        Parses command until it can. Should be used as iterator.
-        Yields game tick.
+        Parses commands until it can. Should be used as iterator.
+        Yields game tick, command_type and command_data.
 
         replay format:
-            1. byte for command 0-255
-            2. 2 bytes for size of command 0 - 65535
-            3. content of command
+            1. byte for command 0 - 23
+            2. 2 bytes for size of command 3 - 65535
+            3. content of command - binary stuff for `parse_next_command`
         """
-        while self.reader.offset() < self.reader.size():
+        if data:
+            self.replay_reader.set_data(data)
+
+        while self.replay_reader.offset() < self.replay_reader.size():
             if self.parse_until_desync and self.desync_ticks:
                 break
-            read_length = 0
-            command_type = self.reader.read_byte()
-            if self.reader.offset() + 2 < self.reader.size():
-                command_length = self.reader.read_short()
 
-                if self.reader.offset() + command_length <= self.reader.size():
-                    if self.can_parse_command(command_type):
-                        self.parse_next_command(command_type, command_length)
-                    else:
-                        self.reader.read(command_length)
-                    read_length = command_length + 3  # read_byte + read_short + command_length
-            yield self.tick, command_type, read_length
+            if self.replay_reader.offset() + 3 <= self.replay_reader.size():
+                command_type, command_data = self.parse_command_and_get_data()
+                if command_type is not None:
+                    yield self.tick, command_type, command_data
+                else:
+                    # we don't have enough command_data
+                    break
+            else:
+                # we don't have what to parse
+                break
 
-    def parse_next_command(self, command_type: int, command_length: int) -> None:
+    def parse_command_and_get_data(self) -> Tuple[Optional[int], Optional[bytes]]:
+        """
+        Parses one command and returns it type and binary data for whole command
+
+        Packet structure in bytestream
+        ::
+            char "=" is one byte
+
+            4   7      7      7
+            TLLDTLLDDDDTLLDDDDTLLDDDD
+            =========================
+
+        Where:
+        ::
+            T - byte - defines command type
+            L - short - defines command length of T + L + D
+            D - variable length - binary data, size it is in `command length`, may be empty
+        """
+
+        start_offset = self.replay_reader.offset()
+
+        command_type = self.replay_reader.read_byte()
+        command_length = self.replay_reader.read_short()
+
+        if start_offset + command_length <= self.replay_reader.size():
+            self.replay_reader.seek(start_offset)
+            data = self.replay_reader.read(command_length)
+
+            if self.can_parse_next_command(command_type):
+                self.replay_reader.seek(start_offset + 3)
+                self.parse_next_command(command_type)
+
+            return command_type, data
+
+        return None, None
+
+    def parse_next_command(self, command_type) -> None:
+        """
+        Parses one command from buffer.
+        """
         command_parser = COMMAND_PARSERS[command_type]
-        command_data = command_parser(self.reader)
+        command_data = command_parser(self.replay_reader)
         self.process_command(command_type, command_data)
 
-        if DEBUG:
-            print(self.reader.offset(), command_parser.__name__, command_type, command_length, "->", command_data)
-
     def process_command(self, command_type: int, command_data: Any) -> None:
+        """
+        Defines operations over some of commands, handles tick counter,
+        check sum validity, players messages, some logic interactions between commands.
+        """
         command_name = CommandStateNames[command_type]
+
         if command_type == CommandStates.Advance:
             if self.store_body and self.tick_data:
                 self.body.append(self.tick_data)
             self.tick_data = {}
             self.tick += command_data
+
         elif command_type == CommandStates.SetCommandSource:
             self.player_id = command_data
+
         elif command_type == CommandStates.CommandSourceTerminated:
             self.last_players_tick[self.player_id] = self.tick
+
         elif command_type == CommandStates.VerifyChecksum:
             checksum, tick = command_data
             if tick == self.previous_tick and checksum != self.previous_checksum:
                 self.desync_ticks.append(self.tick)
             self.previous_tick = tick
             self.previous_checksum = checksum
+
         elif command_type == CommandStates.LuaSimCallback:
             cmd_string, data = command_data
             if cmd_string == "GiveResourcesToPlayer" and "Msg" in data:
@@ -121,5 +172,8 @@ class ReplayBody:
         if self.store_body:
             self.tick_data.setdefault(self.player_id, {})[command_name] = command_data
 
-    def can_parse_command(self, command_type):
+    def can_parse_next_command(self, command_type):
+        """
+        Runs per command
+        """
         return not self.parse_commands or command_type in self.parse_commands

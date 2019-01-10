@@ -1,4 +1,8 @@
-from replay_parser.replay import parse, get_body_parser
+from io import BytesIO
+
+from replay_parser.body import ReplayBody
+from replay_parser.reader import ReplayReader
+from replay_parser.replay import parse, continuous_parse
 
 
 def test_replay_parse(replays, replay_file_name):
@@ -23,12 +27,32 @@ def test_replay_header_parse(replays):
     assert "desync_ticks" not in data
 
 
-def test_continuous_parse(replays):
-    parser = get_body_parser(replays, parse_header=True)
-    for tick, command_type, read_length in parser.continuous_parse():
-        pass
-
-
 def test_parse_only_some_commands(replays):
     parse(replays, parse_commands=[x for x in range(23)])
+
+
+def test_continuous_parse_command_by_command(replays):
+    sender_stream = continuous_parse(replays, parse_header=True, parse_commands={x for x in range(7)})
+    server_body_buffer = BytesIO()
+    server_body_parser = ReplayBody(
+        ReplayReader(server_body_buffer, no_copy_data_source=True),
+        parse_commands={x for x in range(7)}
+    )
+    header = next(sender_stream)
+
+    assert "header" in header
+    assert "body_offset" in header
+    for tick, command_type, data in sender_stream:
+        times = 0
+        for tick2, command_type2, data2 in server_body_parser.continuous_parse(data):
+            assert tick == tick2
+            assert command_type == command_type2
+            assert data == data2
+            times += 1
+
+        assert times == 1
+
+
+def test_parse_until_desync(replays):
+    parse(replays, test_parse_until_desync=True)
 

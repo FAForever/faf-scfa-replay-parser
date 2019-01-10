@@ -1,35 +1,26 @@
-from io import RawIOBase, BytesIO, SEEK_CUR, SEEK_END
+from io import RawIOBase, BytesIO, SEEK_CUR, SEEK_END, SEEK_SET, FileIO
 from struct import unpack
 from typing import Union, Dict
 
-__all__ = ('ReplayReader', 'TYPE_LUA')
+__all__ = ('ReplayReader', 'TYPE_LUA', 'ACCEPTABLE_DATA_TYPE')
 
 TYPE_LUA = Union[int, float, str, bool, None, Dict]
+ACCEPTABLE_DATA_TYPE = Union[RawIOBase, FileIO, BytesIO, bytearray, bytes]
 
 
 class ReplayReader:
     """
-    Class that handles reading data from stream and provides basic methods for parsing
+    Handles reading data from stream and provides basic methods for parsing binary stuff.
     """
 
     def __init__(
             self,
-            input_data: Union[RawIOBase, BytesIO, bytearray, bytes],
+            input_data: ACCEPTABLE_DATA_TYPE = b"",
             no_copy_data_source: bool=False,
             **kwargs
     ) -> None:
-        self.data: BytesIO = None
-        if isinstance(input_data, (RawIOBase, BytesIO)):
-            # copy data and move back to previous position
-            position = input_data.tell()
-            input_data.seek(0)
-            if no_copy_data_source:
-                self.data = input_data
-            else:
-                self.data = BytesIO(input_data.read())  # copy data
-            input_data.seek(position)
-        elif isinstance(input_data, (bytes, bytearray)):
-            self.data = BytesIO(input_data)  # copy data
+        self.buffer: BytesIO = None
+        self.set_data(input_data, no_copy_data_source)
 
     def read_string(self) -> str:
         """
@@ -37,7 +28,7 @@ class ReplayReader:
         """
         res = b""
         while True:
-            char_ = unpack("s", self.data.read(1))[0]
+            char_ = unpack("s", self.buffer.read(1))[0]
             if char_ == b'\x00':
                 break
             res += char_
@@ -47,7 +38,7 @@ class ReplayReader:
         """
         Reads number/float/boolean by input type & size
         """
-        value = unpack(type_, self.data.read(size))[0]
+        value = unpack(type_, self.buffer.read(size))[0]
         return value
 
     def read_int(self) -> int:
@@ -67,9 +58,9 @@ class ReplayReader:
 
     def read_nil(self) -> None:
         """
-        Moves head forward
+        Moves buffer head forward
         """
-        self.data.read(1)
+        self.buffer.read(1)
         return None
 
     def read_dict(self) -> Dict:
@@ -83,7 +74,7 @@ class ReplayReader:
             value = self.read_lua()
             result[key] = value
 
-        self.data.read(1)
+        self.buffer.read(1)
         return result
 
     def read_lua(self) -> TYPE_LUA:
@@ -110,27 +101,58 @@ class ReplayReader:
         Peek for next byte value
         """
         value = self.read_byte()
-        self.data.seek(-1, SEEK_CUR)
+        self.buffer.seek(-1, SEEK_CUR)
         return value
 
     def read(self, size=1) -> bytes:
         """
         Moves head forward
         """
-        return self.data.read(size)
+        return self.buffer.read(size)
 
     def offset(self) -> int:
         """
         Returns internal pointer position
         """
-        return self.data.tell()
+        return self.buffer.tell()
 
     def size(self) -> int:
         """
         Returns size of buffer
         """
-        position = self.data.tell()
-        self.data.seek(0, SEEK_END)
-        end_position = self.data.tell()
-        self.data.seek(position)
+        position = self.buffer.tell()
+        self.buffer.seek(0, SEEK_END)
+        end_position = self.buffer.tell()
+        self.buffer.seek(position)
         return end_position
+
+    def seek(self, size: int, seek_type: int =SEEK_SET):
+        """
+        Moves offset to position in buffer
+        """
+        self.buffer.seek(size, seek_type)
+
+    def set_data(self, input_data: ACCEPTABLE_DATA_TYPE, no_copy_data_source: bool =False):
+        """
+        Sets the current buffer for future reading.
+        """
+
+        if isinstance(input_data, (RawIOBase, BytesIO, FileIO)):
+            # copy data and move back to previous position
+            position = input_data.tell()
+            input_data.seek(0)
+            if no_copy_data_source:
+                self.buffer = input_data
+            else:
+                self.buffer = BytesIO(input_data.read())  # copy data
+            input_data.seek(position)
+        elif isinstance(input_data, (bytes, bytearray)):
+            self.buffer = BytesIO()
+            self.buffer.truncate(len(input_data))
+            self.buffer.seek(0)
+            self.buffer.write(input_data)
+            self.buffer.seek(0)
+        else:
+            raise ValueError("Unexpected input_data type {}. Use BytesIO, FileIO, bytes or bytearray".format(
+                type(input_data)
+            ))

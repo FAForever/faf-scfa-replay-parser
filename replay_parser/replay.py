@@ -1,11 +1,11 @@
 from io import RawIOBase
-from typing import Union, Dict, Any
+from typing import Union, Dict, Any, Tuple, Iterator
 
 from replay_parser.body import ReplayBody
 from replay_parser.header import ReplayHeader
 from replay_parser.reader import ReplayReader
 
-__all__ = ('parse', 'get_body_parser',)
+__all__ = ('parse', 'continuous_parse',)
 
 
 def parse(
@@ -35,11 +35,11 @@ def parse(
     return result
 
 
-def get_body_parser(
+def continuous_parse(
         input_data: Union[RawIOBase, bytearray, bytes],
         parse_header=False,
         **kwargs
-) -> ReplayBody:
+) -> Iterator[Union[Dict[str, Union[int, Dict]], Tuple]]:
     """
     Used for continuous replay body parsing, when header is not needed.
     Returns `ReplayBody` parser, that has `continuous_parse`.
@@ -52,6 +52,10 @@ def get_body_parser(
     """
     reader = ReplayReader(input_data, **kwargs)
     if parse_header:
-        ReplayHeader(reader)
+        yield {
+            "header": ReplayHeader(reader).to_dict(),
+            "body_offset": reader.offset(),
+        }
 
-    return ReplayBody(reader, **kwargs)
+    for result in ReplayBody(reader, **kwargs).continuous_parse():
+        yield result

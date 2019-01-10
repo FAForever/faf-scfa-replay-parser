@@ -17,7 +17,7 @@ class ReplayHeader:
     def __init__(self, reader: ReplayReader) -> None:
         self.version = reader.read_string()
         reader.read(3)
-        self.replay_version, self.map_name = reader.read_string().split("\r\n", 2)
+        self.replay_version, self.map_name = reader.read_string().split("\r\n", 1)
         reader.read(4)
 
         mods_size = reader.read_int()

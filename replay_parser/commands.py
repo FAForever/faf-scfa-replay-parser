@@ -130,7 +130,7 @@ def command_set_command_target(reader: ReplayReader) -> Tuple[int, TYPE_TARGET]:
 
 
 def command_set_command_type(reader: ReplayReader) -> Tuple[int, int]:
-    return reader.read_int(), reader.read_byte()
+    return reader.read_int(), reader.read_int()
 
 
 def command_set_command_cells(reader: ReplayReader) -> Tuple[int, TYPE_LUA, TYPE_VECTOR]:

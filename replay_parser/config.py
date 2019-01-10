@@ -30,7 +30,7 @@ def profile_it(sort_by='cumulative'):
     Profiler decorator
     ::
         >>> @profile_it("call")
-        >>> def cosi()
+        >>> def func():
         >>>     pass
     """
 
