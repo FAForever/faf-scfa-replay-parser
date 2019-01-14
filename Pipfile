@@ -4,3 +4,4 @@ python_version = '3.6'
 [packages]
 pytest = "*"
 pytest-cov = "*"
+pytest-profiling = "*"

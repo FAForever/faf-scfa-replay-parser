@@ -79,20 +79,21 @@ class ReplayBody:
         if data:
             self.replay_reader.set_data(data)
 
-        while self.replay_reader.offset() < self.replay_reader.size():
-            if self.parse_until_desync and self.desync_ticks:
-                break
+        buffer_size = self.replay_reader.size()
+        try:
+            while self.replay_reader.offset() < buffer_size:
+                if self.parse_until_desync and self.desync_ticks:
+                    break
 
-            if self.replay_reader.offset() + 3 <= self.replay_reader.size():
-                command_type, command_data = self.parse_command_and_get_data()
-                if command_type is not None:
+                if self.replay_reader.offset() + 3 <= buffer_size:
+                    command_type, command_data = self.parse_command_and_get_data()
                     yield self.tick, command_type, command_data
                 else:
-                    # we don't have enough command_data
+                    # we don't have what to parse
                     break
-            else:
-                # we don't have what to parse
-                break
+        except Exception as e:
+            # we have bad file format, or something goes wrong, we must stop
+            raise StopIteration(e)
 
     def parse_command_and_get_data(self) -> Tuple[Optional[int], Optional[bytes]]:
         """
@@ -118,17 +119,14 @@ class ReplayBody:
         command_type = self.replay_reader.read_byte()
         command_length = self.replay_reader.read_short()
 
-        if start_offset + command_length <= self.replay_reader.size():
-            self.replay_reader.seek(start_offset)
-            data = self.replay_reader.read(command_length)
+        self.replay_reader.seek(start_offset)
+        data = self.replay_reader.read(command_length)
 
-            if self.can_parse_next_command(command_type):
-                self.replay_reader.seek(start_offset + 3)
-                self.parse_next_command(command_type)
+        if self.can_parse_next_command(command_type):
+            self.replay_reader.seek(start_offset + 3)
+            self.parse_next_command(command_type)
 
-            return command_type, data
-
-        return None, None
+        return command_type, data
 
     def parse_next_command(self, command_type) -> None:
         """

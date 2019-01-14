@@ -20,6 +20,7 @@ class ReplayReader:
             **kwargs
     ) -> None:
         self.buffer: BytesIO = None
+        self.buffer_size = None  # buffer size doesn't change often, it can be cached
         self.set_data(input_data, no_copy_data_source)
 
     def read_string(self) -> str:
@@ -120,11 +121,13 @@ class ReplayReader:
         """
         Returns size of buffer
         """
-        position = self.buffer.tell()
-        self.buffer.seek(0, SEEK_END)
-        end_position = self.buffer.tell()
-        self.buffer.seek(position)
-        return end_position
+        if self.buffer_size is None:
+            position = self.buffer.tell()
+            self.buffer.seek(0, SEEK_END)
+            end_position = self.buffer.tell()
+            self.buffer.seek(position)
+            self.buffer_size = end_position
+        return self.buffer_size
 
     def seek(self, size: int, seek_type: int =SEEK_SET):
         """
@@ -156,3 +159,4 @@ class ReplayReader:
             raise ValueError("Unexpected input_data type {}. Use BytesIO, FileIO, bytes or bytearray".format(
                 type(input_data)
             ))
+        self.buffer_size = None

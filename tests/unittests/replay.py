@@ -1,12 +1,21 @@
 from io import BytesIO
 
+from constants import CommandStates
 from replay_parser.body import ReplayBody
 from replay_parser.reader import ReplayReader
 from replay_parser.replay import parse, continuous_parse
 
 
 def test_replay_parse(replays, replay_file_name):
-    data = parse(replays)
+    data = parse(
+        replays,
+        parse_commands={
+            CommandStates.Advance,
+            CommandStates.SetCommandSource,
+            CommandStates.CommandSourceTerminated,
+            CommandStates.VerifyChecksum,
+        }
+    )
     assert "header" in data
     assert "body" in data
     assert "body_offset" in data
@@ -32,7 +41,16 @@ def test_parse_only_some_commands(replays):
 
 
 def test_continuous_parse_command_by_command(replays):
-    sender_stream = continuous_parse(replays, parse_header=True, parse_commands={x for x in range(7)})
+    sender_stream = continuous_parse(
+        replays,
+        parse_header=True,
+        parse_commands={
+            CommandStates.Advance,
+            CommandStates.SetCommandSource,
+            CommandStates.CommandSourceTerminated,
+            CommandStates.VerifyChecksum,
+        }
+    )
     server_body_buffer = BytesIO()
     server_body_parser = ReplayBody(
         ReplayReader(server_body_buffer, no_copy_data_source=True),
