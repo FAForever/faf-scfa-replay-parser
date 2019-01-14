@@ -81,16 +81,9 @@ class ReplayBody:
 
         buffer_size = self.replay_reader.size()
         try:
-            while self.replay_reader.offset() < buffer_size:
-                if self.parse_until_desync and self.desync_ticks:
-                    break
-
-                if self.replay_reader.offset() + 3 <= buffer_size:
-                    command_type, command_data = self.parse_command_and_get_data()
-                    yield self.tick, command_type, command_data
-                else:
-                    # we don't have what to parse
-                    break
+            while self.replay_reader.offset() + 3 <= buffer_size:
+                command_type, command_data = self.parse_command_and_get_data()
+                yield self.tick, command_type, command_data
         except Exception as e:
             # we have bad file format, or something goes wrong, we must stop
             raise StopIteration(e)
@@ -158,6 +151,9 @@ class ReplayBody:
         elif command_type == CommandStates.VerifyChecksum:
             checksum, tick = command_data
             if tick == self.previous_tick and checksum != self.previous_checksum:
+                if self.parse_until_desync:
+                    raise StopIteration()
+
                 self.desync_ticks.append(self.tick)
             self.previous_tick = tick
             self.previous_checksum = checksum
