@@ -1,0 +1,16 @@
+language: python
+python: 3.6
+
+sudo: required
+services: docker
+
+install:
+  - pip3 install pipenv
+  - pipenv install
+  - pipenv install coveralls
+
+script:
+  - pipenv run ./test.sh
+
+after_success:
+  - COVERALLS_REPO_TOKEN=NzJA40sjU3dJbdNfU6gDsg4JdYbAcaVa7 coveralls
