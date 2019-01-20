@@ -135,23 +135,25 @@ class ReplayReader:
         """
         self.buffer.seek(size, seek_type)
 
-    def set_data(self, input_data: ACCEPTABLE_DATA_TYPE, no_copy_data_source: bool =False):
+    def set_data(self, input_data: ACCEPTABLE_DATA_TYPE, no_copy_data_source: bool = False):
         """
         Sets the current buffer for future reading.
         """
-
+        self.buffer_size = None
         if isinstance(input_data, (RawIOBase, BytesIO, FileIO)):
-            # copy data and move back to previous position
-            position = input_data.tell()
-            input_data.seek(0)
             if no_copy_data_source:
                 self.buffer = input_data
             else:
+                # copy data and move back to previous position
+                position = input_data.tell()
+                input_data.seek(0)
                 self.buffer = BytesIO(input_data.read())  # copy data
-            input_data.seek(position)
+                input_data.seek(position)
         elif isinstance(input_data, (bytes, bytearray)):
-            self.buffer = BytesIO()
-            self.buffer.truncate(len(input_data))
+            self.buffer_size = len(input_data)
+            if not isinstance(self.buffer, BytesIO):
+                self.buffer = BytesIO()
+            self.buffer.truncate(self.buffer_size)
             self.buffer.seek(0)
             self.buffer.write(input_data)
             self.buffer.seek(0)
@@ -159,4 +161,3 @@ class ReplayReader:
             raise ValueError("Unexpected input_data type {}. Use BytesIO, FileIO, bytes or bytearray".format(
                 type(input_data)
             ))
-        self.buffer_size = None

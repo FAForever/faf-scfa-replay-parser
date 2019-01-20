@@ -1,5 +1,5 @@
-from io import RawIOBase
-from typing import List, Dict, Any, Iterator, Tuple, Optional, Union
+import struct
+from typing import List, Dict, Any, Iterator, Tuple, Optional
 
 from replay_parser.commands import COMMAND_PARSERS
 from replay_parser.constants import CommandStates, CommandStateNames
@@ -30,6 +30,7 @@ class ReplayBody:
             To get list of commands use get_body
         """
         self.replay_reader: ReplayReader = reader
+        self.command_reader: ReplayReader = ReplayReader()
 
         self.body: List = []
         self.last_players_tick: Dict = {}
@@ -106,27 +107,27 @@ class ReplayBody:
             L - short - defines command length of T + L + D
             D - variable length - binary data, size it is in `command length`, may be empty
         """
+        # seek preventing
+        command_type_byte = self.replay_reader.read(1)
+        command_length_byte = self.replay_reader.read(2)
 
-        start_offset = self.replay_reader.offset()
+        command_type = struct.unpack("B", command_type_byte)[0]
+        command_length = struct.unpack("H", command_length_byte)[0]
 
-        command_type = self.replay_reader.read_byte()
-        command_length = self.replay_reader.read_short()
-
-        self.replay_reader.seek(start_offset)
-        data = self.replay_reader.read(command_length)
+        data = self.replay_reader.read(command_length - 3)
 
         if self.can_parse_next_command(command_type):
-            self.replay_reader.seek(start_offset + 3)
-            self.parse_next_command(command_type)
+            self.parse_next_command(command_type, data)
 
-        return command_type, data
+        return command_type, command_type_byte + command_length_byte + data
 
-    def parse_next_command(self, command_type) -> None:
+    def parse_next_command(self, command_type, data) -> None:
         """
         Parses one command from buffer.
         """
+        self.command_reader.set_data(data)
         command_parser = COMMAND_PARSERS[command_type]
-        command_data = command_parser(self.replay_reader)
+        command_data = command_parser(self.command_reader)
         self.process_command(command_type, command_data)
 
     def process_command(self, command_type: int, command_data: Any) -> None:

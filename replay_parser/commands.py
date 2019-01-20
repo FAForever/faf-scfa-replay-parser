@@ -7,8 +7,9 @@ __all__ = ('COMMAND_PARSERS',)
 
 
 TYPE_VECTOR = Tuple[float, float, float]
-TYPE_FORMATION = Tuple[float, float, float, float, float]
+TYPE_FORMATION = Optional[Tuple[float, float, float, float, float]]
 TYPE_TARGET = Tuple[int, Optional[int], Optional[TYPE_VECTOR]]
+TYPE_COMMAND_DATA = Tuple[int, int, TYPE_TARGET, TYPE_FORMATION, str, TYPE_LUA]
 
 
 def _read_vector(reader: ReplayReader) -> TYPE_VECTOR:
@@ -69,7 +70,7 @@ def _parse_entity_ids_set(reader: ReplayReader) -> Tuple[int, List[int]]:
     return units_number, unit_ids
 
 
-def _parse_formation(reader: ReplayReader) -> Optional[TYPE_FORMATION]:
+def _parse_formation(reader: ReplayReader) -> TYPE_FORMATION:
     formation = reader.read_int()
     if formation != -1:
         w = reader.read_float()
@@ -93,7 +94,7 @@ def _parse_target(reader: ReplayReader) -> TYPE_TARGET:
     return target, entity_id, position
 
 
-def _parse_command_data(reader: ReplayReader):
+def _parse_command_data(reader: ReplayReader) -> TYPE_COMMAND_DATA:
     command_id = reader.read_int()
     reader.read(4)
     command_type = reader.read_byte()
@@ -114,11 +115,11 @@ def _parse_command_data(reader: ReplayReader):
     return command_id, command_type, sti_target, formation, blueprint_id, cells
 
 
-def command_issue(reader: ReplayReader):
+def command_issue(reader: ReplayReader) -> Tuple[int, List[int], TYPE_COMMAND_DATA]:
     units_number, unit_ids = _parse_entity_ids_set(reader)
     cmd_data = _parse_command_data(reader)
 
-    return unit_ids, cmd_data
+    return units_number, unit_ids, cmd_data
 
 
 def command_command_count(reader: ReplayReader) -> Tuple[int, int]:
@@ -158,7 +159,7 @@ def command_execute_lua_in_sim(reader: ReplayReader) -> str:
     return reader.read_string()
 
 
-def command_lua_sim_callback(reader: ReplayReader):
+def command_lua_sim_callback(reader: ReplayReader) -> Tuple[str, TYPE_LUA]:
     lua_name = reader.read_string()
     lua = reader.read_lua()
     if lua:
