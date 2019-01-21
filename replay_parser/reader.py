@@ -1,3 +1,5 @@
+# cython: language_level=3
+
 from io import RawIOBase, BytesIO, SEEK_CUR, SEEK_END, SEEK_SET, FileIO
 from struct import unpack
 from typing import Union, Dict

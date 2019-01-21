@@ -1,3 +1,5 @@
+# cython: language_level=3
+
 import struct
 from typing import List, Dict, Any, Iterator, Tuple, Optional
 

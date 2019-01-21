@@ -5,3 +5,4 @@ python_version = '3.6'
 pytest = "==3.10.1"
 pytest-cov = "==2.6.1"
 pytest-profiling = "==1.4.0"
+Cython = "*"

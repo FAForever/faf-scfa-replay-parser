@@ -1,6 +1,6 @@
 from io import BytesIO
 
-from constants import CommandStates
+from replay_parser.constants import CommandStates
 from replay_parser.body import ReplayBody
 from replay_parser.reader import ReplayReader
 from replay_parser.replay import parse, continuous_parse
@@ -37,7 +37,7 @@ def test_replay_header_parse(replays):
 
 
 def test_parse_only_some_commands(replays):
-    parse(replays, parse_commands=[x for x in range(23)])
+    parse(replays, parse_commands={x for x in range(23)})
 
 
 def test_continuous_parse_command_by_command(replays):

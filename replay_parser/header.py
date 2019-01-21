@@ -1,3 +1,5 @@
+# cython: language_level=3
+
 from typing import Dict
 
 from replay_parser.reader import ReplayReader

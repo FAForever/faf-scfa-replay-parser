@@ -1,3 +1,5 @@
+# cython: language_level=3
+
 
 __all__ = ('units',)
 

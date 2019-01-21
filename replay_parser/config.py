@@ -1,3 +1,5 @@
+# cython: language_level=3
+
 import cProfile
 import os
 import pstats

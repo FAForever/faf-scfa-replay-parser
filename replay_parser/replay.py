@@ -1,3 +1,5 @@
+# cython: language_level=3
+
 from io import RawIOBase
 from typing import Union, Dict, Any, Tuple, Iterator
 

@@ -1,3 +1,5 @@
+# cython: language_level=3
+
 from typing import Tuple, Optional, List
 
 from replay_parser.constants import TargetType, CommandStates
