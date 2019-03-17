@@ -85,9 +85,9 @@ class ReplayBody:
             while self.replay_reader.offset() + 3 <= buffer_size:
                 command_type, command_data = self.parse_command_and_get_data()
                 yield self.tick, command_type, command_data
-        except Exception as e:
+        except Exception:
             # we have bad file format, or something goes wrong, we must stop
-            raise StopIteration(e)
+            raise
 
     def parse_command_and_get_data(self) -> Tuple[Optional[int], Optional[bytes]]:
         """
@@ -141,16 +141,16 @@ class ReplayBody:
             if self.store_body and self.tick_data:
                 self.body.append(self.tick_data)
             self.tick_data = {}
-            self.tick += command_data
+            self.tick += command_data["advance"]
 
         elif command_type == CommandStates.SetCommandSource:
-            self.player_id = command_data
+            self.player_id = command_data["player_id"]
 
         elif command_type == CommandStates.CommandSourceTerminated:
             self.last_players_tick[self.player_id] = self.tick
 
         elif command_type == CommandStates.VerifyChecksum:
-            checksum, tick = command_data
+            checksum, tick = command_data["checksum"], command_data["tick"]
             if tick == self.previous_tick and checksum != self.previous_checksum:
                 if self.parse_until_desync:
                     raise StopIteration()
@@ -160,7 +160,7 @@ class ReplayBody:
             self.previous_checksum = checksum
 
         elif command_type == CommandStates.LuaSimCallback:
-            cmd_string, data = command_data
+            cmd_string, data = command_data["lua_name"], command_data["lua"]
             if cmd_string == "GiveResourcesToPlayer" and "Msg" in data:
                 self.messages[self.tick] = (data["Sender"], data["Msg"]["to"], data["Msg"]["text"])
 
