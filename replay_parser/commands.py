@@ -157,8 +157,23 @@ def command_issue(reader: ReplayReader) -> Dict[str, Union[str, int, List[int], 
             "cmd_data": cmd_data}
 
 
-def command_command_count(reader: ReplayReader) -> Dict[str, Union[str, int]]:
-    return {"type": "command_count",
+def command_factory_issue(reader: ReplayReader) -> Dict[str, Union[str, int, List[int], TYPE_COMMAND_DATA]]:
+    unit_ids = _parse_entity_ids_set(reader)
+    cmd_data = _parse_command_data(reader)
+
+    return {"type": "factory_issue",
+            "entity_ids_set": unit_ids,
+            "cmd_data": cmd_data}
+
+
+def command_command_count_increase(reader: ReplayReader) -> Dict[str, Union[str, int]]:
+    return {"type": "command_count_increase",
+            "command_id": reader.read_int(),
+            "delta": reader.read_int()}
+
+
+def command_command_count_decrease(reader: ReplayReader) -> Dict[str, Union[str, int]]:
+    return {"type": "command_count_decrease",
             "command_id": reader.read_int(),
             "delta": reader.read_int()}
 
@@ -246,9 +261,9 @@ COMMAND_PARSERS = {
     CommandStates.WarpEntity: command_warp_entity,
     CommandStates.ProcessInfoPair: command_process_info_pair,
     CommandStates.IssueCommand: command_issue,
-    CommandStates.IssueFactoryCommand: command_issue,
-    CommandStates.IncreaseCommandCount: command_command_count,
-    CommandStates.DecreaseCommandCount: command_command_count,
+    CommandStates.IssueFactoryCommand: command_factory_issue,
+    CommandStates.IncreaseCommandCount: command_command_count_increase,
+    CommandStates.DecreaseCommandCount: command_command_count_decrease,
     CommandStates.SetCommandTarget: command_set_command_target,
     CommandStates.SetCommandType: command_set_command_type,
     CommandStates.SetCommandCells: command_set_command_cells,
