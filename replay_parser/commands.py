@@ -149,12 +149,11 @@ def _parse_command_data(reader: ReplayReader) -> TYPE_COMMAND_DATA:
 
 
 def command_issue(reader: ReplayReader) -> Dict[str, Union[str, int, List[int], TYPE_COMMAND_DATA]]:
-    units_number, unit_ids = _parse_entity_ids_set(reader)
+    unit_ids = _parse_entity_ids_set(reader)
     cmd_data = _parse_command_data(reader)
 
     return {"type": "issue",
-            "units_number": units_number,
-            "unit_ids": unit_ids,
+            "entity_ids_set": unit_ids,
             "cmd_data": cmd_data}
 
 
@@ -203,7 +202,7 @@ def command_debug_command(reader: ReplayReader) -> Dict[str, Union[str, TYPE_VEC
             "debug_command": debug_command,
             "vector": vector,
             "focus_army_index": focus_army_index,
-            "unit_ids": unit_ids}
+            "entity_ids_set": unit_ids}
 
 
 def command_execute_lua_in_sim(reader: ReplayReader) -> Dict[str, str]:
