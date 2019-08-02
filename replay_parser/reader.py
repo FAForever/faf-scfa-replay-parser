@@ -27,7 +27,7 @@ class ReplayReader:
         """
         Parses string from binary data.
         """
-        res = b""
+        res = bytearray()
         while True:
             char_ = unpack("s", self.buffer.read(1))[0]
             if char_ == b'\x00':
