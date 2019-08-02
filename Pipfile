@@ -1,5 +1,6 @@
 [scripts]
 tests = "./test.sh"
+profile = "./profile.sh"
 
 [requires]
 python_version = '3.6'
