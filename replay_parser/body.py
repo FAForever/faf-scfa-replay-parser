@@ -1,9 +1,9 @@
 import struct
-from typing import List, Dict, Any, Iterator, Tuple, Optional
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 from replay_parser.commands import COMMAND_PARSERS
-from replay_parser.constants import CommandStates, CommandStateNames
-from replay_parser.reader import ReplayReader, ACCEPTABLE_DATA_TYPE
+from replay_parser.constants import CommandStateNames, CommandStates
+from replay_parser.reader import ACCEPTABLE_DATA_TYPE, ReplayReader
 
 __all__ = ('ReplayBody',)
 
@@ -91,7 +91,7 @@ class ReplayBody:
 
     def parse_command_and_get_data(self) -> Tuple[Optional[int], Optional[bytes]]:
         """
-        Parses one command and returns it type and binary data for whole command
+        Parses one command and returns its type and binary data for whole command
 
         Packet structure in bytestream
         ::
@@ -112,7 +112,7 @@ class ReplayBody:
         command_length_byte = self.replay_reader.read(2)
 
         command_type = struct.unpack("B", command_type_byte)[0]
-        command_length = struct.unpack("H", command_length_byte)[0]
+        command_length = struct.unpack("<H", command_length_byte)[0]
 
         data = self.replay_reader.read(command_length - 3)
 

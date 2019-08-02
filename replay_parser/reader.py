@@ -37,13 +37,13 @@ class ReplayReader:
         """
         res = bytearray()
         while True:
-            char_ = unpack("s", self.buffer.read(1))[0]
+            char_ = unpack("c", self.buffer.read(1))[0]
             if char_ == b'\x00':
                 break
             res += char_
         return res.decode()
 
-    def read_number(self, type_: str = "i", size: int = 4) -> Union[int, float]:
+    def read_number(self, type_: str = "<i", size: int = 4) -> Union[int, float]:
         """
         Reads number/float/boolean by input type & size
         """
@@ -51,13 +51,13 @@ class ReplayReader:
         return value
 
     def read_int(self) -> int:
-        return self.read_number(type_="i", size=4)
+        return self.read_number(type_="<i", size=4)
 
     def read_short(self) -> int:
-        return self.read_number(type_="H", size=2)
+        return self.read_number(type_="<H", size=2)
 
     def read_float(self) -> float:
-        return self.read_number(type_="f", size=4)
+        return self.read_number(type_="<f", size=4)
 
     def read_byte(self) -> int:
         return self.read_number(type_="B", size=1)
