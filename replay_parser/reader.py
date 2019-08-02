@@ -1,11 +1,19 @@
-from io import RawIOBase, BytesIO, SEEK_CUR, SEEK_END, SEEK_SET, FileIO
+from io import SEEK_END, SEEK_SET, BytesIO, FileIO, RawIOBase
 from struct import unpack
-from typing import Union, Dict
+from typing import Dict, Optional, Union
 
 __all__ = ('ReplayReader', 'TYPE_LUA', 'ACCEPTABLE_DATA_TYPE')
 
 TYPE_LUA = Union[int, float, str, bool, None, Dict]
 ACCEPTABLE_DATA_TYPE = Union[RawIOBase, FileIO, BytesIO, bytearray, bytes]
+
+
+LUA_FLOAT = 0
+LUA_STRING = 1
+LUA_NIL = 2
+LUA_BOOL = 3
+LUA_TABLE = 4
+LUA_END = 5
 
 
 class ReplayReader:
@@ -70,40 +78,36 @@ class ReplayReader:
         """
         result = {}
 
-        while self.peek_byte() != 5:
-            key = self.read_lua()
+        while True:
+            type_ = self.read_byte()
+            if type_ == LUA_END:
+                break
+            key = self.read_lua(type_=type_)
             value = self.read_lua()
             result[key] = value
 
-        self.buffer.read(1)
         return result
 
-    def read_lua(self) -> TYPE_LUA:
+    def read_lua(self, type_: Optional[int] = None) -> TYPE_LUA:
         """
         Reads lua format
         """
         # determines data_type
-        type_ = self.read_byte()
-        if type_ == 0:
+        if type_ is None:
+            type_ = self.read_byte()
+
+        if type_ == LUA_FLOAT:
             return self.read_float()
-        if type_ == 1:
+        if type_ == LUA_STRING:
             return self.read_string()
-        if type_ == 2:
+        if type_ == LUA_NIL:
             return self.read_nil()
-        if type_ == 3:
+        if type_ == LUA_BOOL:
             return self.read_bool()
-        if type_ == 4:
+        if type_ == LUA_TABLE:
             return self.read_dict()
 
         raise ValueError("Uknown data type {} in lua format".format(type_))
-
-    def peek_byte(self) -> int:
-        """
-        Peek for next byte value
-        """
-        value = self.read_byte()
-        self.buffer.seek(-1, SEEK_CUR)
-        return value
 
     def read(self, size=1) -> bytes:
         """
