@@ -1,7 +1,10 @@
+[scripts]
+tests = "./test.sh"
+
 [requires]
 python_version = '3.6'
 
-[packages-dev]
+[dev-packages]
 pytest = "==3.10.1"
 pytest-cov = "==2.6.1"
 pytest-profiling = "==1.4.0"
