@@ -21,6 +21,7 @@ def test_replay_parse(replays, replay_file_name):
     assert "body_offset" in data
     assert "messages" in data
     assert "desync_ticks" in data
+    assert "last_tick" in data
     if "8748707" in replay_file_name:
         assert 9105 in data['desync_ticks'], data['desync_ticks']
     else:
@@ -34,6 +35,7 @@ def test_replay_header_parse(replays):
     assert "body_offset" in data
     assert "messages" not in data
     assert "desync_ticks" not in data
+    assert "last_tick" not in data
 
 
 def test_parse_only_some_commands(replays):
@@ -73,4 +75,9 @@ def test_continuous_parse_command_by_command(replays):
 
 def test_parse_until_desync(replays):
     parse(replays, test_parse_until_desync=True)
+
+
+def test_parse_only_ticks(replays):
+    data = parse(replays, parse_commands=[CommandStates.Advance])
+    assert data['last_tick']
 
