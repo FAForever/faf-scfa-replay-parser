@@ -1,4 +1,4 @@
-from io import RawIOBase
+from io import RawIOBase, FileIO
 from typing import Any, Dict, Iterator, Tuple, Union
 
 from replay_parser.body import ReplayBody
@@ -10,7 +10,7 @@ __all__ = ('parse', 'continuous_parse',)
 
 def parse(
         input_data: Union[RawIOBase, bytearray, bytes],
-        parse_body: bool=True,
+        parse_body: bool = True,
         **kwargs
 ) -> Dict[str, Any]:
     """
@@ -38,7 +38,7 @@ def parse(
 
 def continuous_parse(
         input_data: Union[RawIOBase, bytearray, bytes],
-        parse_header=False,
+        parse_header: bool = False,
         **kwargs
 ) -> Iterator[Union[Dict[str, Union[int, Dict]], Tuple]]:
     """

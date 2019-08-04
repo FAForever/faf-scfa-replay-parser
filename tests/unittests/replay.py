@@ -55,7 +55,7 @@ def test_continuous_parse_command_by_command(replays):
     )
     server_body_buffer = BytesIO()
     server_body_parser = ReplayBody(
-        ReplayReader(server_body_buffer, no_copy_data_source=True),
+        ReplayReader(server_body_buffer),
         parse_commands={x for x in range(7)}
     )
     header = next(sender_stream)
