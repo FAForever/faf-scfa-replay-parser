@@ -121,11 +121,11 @@ class ReplayBody:
 
         return command_type, command_type_byte + command_length_byte + data
 
-    def parse_next_command(self, command_type, data) -> None:
+    def parse_next_command(self, command_type: int, data: bytes) -> None:
         """
         Parses one command from buffer.
         """
-        self.command_reader.set_data(data)
+        self.command_reader.set_data_from_bytes(data)
         command_parser = COMMAND_PARSERS[command_type]
         command_data = command_parser(self.command_reader)
         self.process_command(command_type, command_data)
@@ -167,7 +167,7 @@ class ReplayBody:
         if self.store_body:
             self.tick_data.setdefault(self.player_id, {})[command_name] = command_data
 
-    def can_parse_next_command(self, command_type):
+    def can_parse_next_command(self, command_type: int):
         """
         Runs per command
         """
