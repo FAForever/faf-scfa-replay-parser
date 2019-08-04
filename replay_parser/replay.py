@@ -1,5 +1,5 @@
 from io import RawIOBase
-from typing import Union, Dict, Any, Tuple, Iterator
+from typing import Any, Dict, Iterator, Tuple, Union
 
 from replay_parser.body import ReplayBody
 from replay_parser.header import ReplayHeader
@@ -31,6 +31,7 @@ def parse(
         result["body"] = body_parser.get_body()
         result["messages"] = body_parser.get_messages()
         result["desync_ticks"] = body_parser.get_desync_ticks()
+        result["last_tick"] = body_parser.tick
 
     return result
 
