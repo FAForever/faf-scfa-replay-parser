@@ -15,14 +15,14 @@ class ReplayBody:
     def __init__(
             self,
             reader: ReplayReader,
-            parse_until_desync: bool = False,
+            stop_on_desync: bool = False,
             parse_commands: set = None,
             store_body: bool = False,
             **kwargs
     ) -> None:
         """
         :param ReplayReader reader: Handles basic operations on stream
-        :param bool parse_until_desync: stops parsing at first desync
+        :param bool stop_on_desync: stops parsing at first desync
         :param set parse_commands: set or list of commands ids to parse,
             list is defined in from `replay_parser.commands.COMMAND_PARSERS`.
             Important: you can't detect desyncs, if you won't have CommandStates.VerifyChecksum
@@ -44,7 +44,7 @@ class ReplayBody:
         self.previous_tick = -1
         self.previous_checksum = None
 
-        self.parse_until_desync = bool(parse_until_desync)
+        self.stop_on_desync = bool(stop_on_desync)
         self.parse_commands = set(parse_commands or set())
         self.store_body = bool(store_body)
 
@@ -57,7 +57,7 @@ class ReplayBody:
     def get_last_players_ticks(self) -> Dict:
         return self.last_players_tick
 
-    def get_desync_tics(self) -> List:
+    def get_desync_ticks(self) -> List:
         return self.desync_ticks
 
     def parse(self) -> None:
@@ -152,7 +152,7 @@ class ReplayBody:
         elif command_type == CommandStates.VerifyChecksum:
             checksum, tick = command_data["checksum"], command_data["tick"]
             if tick == self.previous_tick and checksum != self.previous_checksum:
-                if self.parse_until_desync:
+                if self.stop_on_desync:
                     raise StopIteration()
 
                 self.desync_ticks.append(self.tick)
