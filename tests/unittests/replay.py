@@ -3,7 +3,7 @@ from io import BytesIO
 from constants import CommandStates
 from replay_parser.body import ReplayBody
 from replay_parser.reader import ReplayReader
-from replay_parser.replay import parse, continuous_parse
+from replay_parser.replay import continuous_parse, parse
 
 
 def test_replay_parse(replays, replay_file_name):
@@ -74,10 +74,9 @@ def test_continuous_parse_command_by_command(replays):
 
 
 def test_parse_until_desync(replays):
-    parse(replays, test_parse_until_desync=True)
+    parse(replays, stop_on_desync=True)
 
 
 def test_parse_only_ticks(replays):
     data = parse(replays, parse_commands=[CommandStates.Advance])
     assert data['last_tick']
-
