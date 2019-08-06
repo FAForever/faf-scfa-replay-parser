@@ -1,4 +1,4 @@
-from io import RawIOBase, FileIO
+from io import RawIOBase
 from typing import Any, Dict, Iterator, Tuple, Union
 
 from replay_parser.body import ReplayBody
