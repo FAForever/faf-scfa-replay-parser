@@ -16,8 +16,8 @@ class DataType:
     STRING = 1
     NIL = 2
     BOOL = 3
-    LUA = 4  # dict
-    LUA_END = 5
+    TABLE = 4  # dict
+    END = 5
 
 
 class TargetType:

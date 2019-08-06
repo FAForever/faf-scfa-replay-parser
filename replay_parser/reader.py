@@ -2,18 +2,12 @@ from io import SEEK_END, SEEK_SET, BytesIO, FileIO, RawIOBase
 from struct import unpack
 from typing import Dict, Optional, Union
 
+from replay_parser.constants import DataType
+
 __all__ = ('ReplayReader', 'TYPE_LUA', 'ACCEPTABLE_DATA_TYPE')
 
 TYPE_LUA = Union[int, float, str, bool, None, Dict]
 ACCEPTABLE_DATA_TYPE = Union[RawIOBase, FileIO, BytesIO, bytearray, bytes]
-
-
-LUA_FLOAT = 0
-LUA_STRING = 1
-LUA_NIL = 2
-LUA_BOOL = 3
-LUA_TABLE = 4
-LUA_END = 5
 
 
 class ReplayReader:
@@ -79,7 +73,7 @@ class ReplayReader:
 
         while True:
             type_ = self.read_byte()
-            if type_ == LUA_END:
+            if type_ == DataType.END:
                 break
             key = self.read_lua(type_=type_)
             value = self.read_lua()
@@ -95,15 +89,15 @@ class ReplayReader:
         if type_ is None:
             type_ = self.read_byte()
 
-        if type_ == LUA_FLOAT:
+        if type_ == DataType.NUMBER:
             return self.read_float()
-        if type_ == LUA_STRING:
+        if type_ == DataType.STRING:
             return self.read_string()
-        if type_ == LUA_NIL:
+        if type_ == DataType.NIL:
             return self.read_nil()
-        if type_ == LUA_BOOL:
+        if type_ == DataType.BOOL:
             return self.read_bool()
-        if type_ == LUA_TABLE:
+        if type_ == DataType.TABLE:
             return self.read_dict()
 
         raise ValueError("Uknown data type {} in lua format".format(type_))
