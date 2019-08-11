@@ -46,6 +46,9 @@ class ReplayReader:
     def read_int(self) -> int:
         return self.read_number(type_="<i", size=4)
 
+    def read_uint(self) -> int:
+        return self.read_number(type_="<I", size=4)
+
     def read_short(self) -> int:
         return self.read_number(type_="<H", size=2)
 

@@ -20,24 +20,24 @@ class ReplayHeader:
         self.replay_version, self.map_name = reader.read_string().split("\r\n", 1)
         reader.read(4)
 
-        mods_size = reader.read_int()
+        reader.read_uint()  # mods_size
         self.mods = reader.read_lua()
-        scenario_size = reader.read_int()
+        reader.read_uint()  # scenario_size
         self.scenario = reader.read_lua()
         sources_number = reader.read_byte()
 
         self.players = {}
         for i in range(sources_number):
             name = reader.read_string()
-            player_id = reader.read_int()
+            player_id = reader.read_uint()
             self.players[name] = str(player_id)
 
         self.cheats_enabled = reader.read_bool()
         self.numbers_of_armies = reader.read_byte()
 
         self.armies = {}
-        for i in range(self.numbers_of_armies):
-            player_data_size = reader.read_int()
+        for _ in range(self.numbers_of_armies):
+            reader.read_uint()  # player_data_size
             player_data = reader.read_lua()
             player_source = reader.read_byte()
             self.armies[player_source] = player_data
@@ -45,7 +45,7 @@ class ReplayHeader:
             if player_source != 255:
                 reader.read(1)
 
-        self.random_seed = reader.read_float()
+        self.random_seed = reader.read_uint()
 
     def to_dict(self) -> Dict:
         ret = {}

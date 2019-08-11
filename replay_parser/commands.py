@@ -19,7 +19,7 @@ def _read_vector(reader: ReplayReader) -> TYPE_VECTOR:
 
 def command_advance(reader: ReplayReader) -> Dict[str, int]:
     return {"type": "advance",
-            "advance": reader.read_int()}
+            "advance": reader.read_uint()}
 
 
 def command_set_command_source(reader: ReplayReader) -> Dict[str, int]:
@@ -35,7 +35,7 @@ def command_verify_checksum(reader: ReplayReader) -> Dict[str, Union[str, int]]:
     checksum = "".join("{:02X}".format(ord(reader.read(1))) for _ in range(16))
     return {"type": "verify_checksum",
             "checksum": checksum,
-            "tick": reader.read_int()}
+            "tick": reader.read_uint()}
 
 
 def command_request_pause(reader: ReplayReader) -> Dict:
@@ -88,10 +88,10 @@ def command_process_info_pair(reader: ReplayReader) -> Dict[str, Union[int, str]
 
 
 def _parse_entity_ids_set(reader: ReplayReader) -> TYPE_ENTITY_IDS_SET:
-    units_number = reader.read_int()
+    units_number = reader.read_uint()
     unit_ids = []
     for i in range(units_number):
-        unit_ids.append(reader.read_int())
+        unit_ids.append(reader.read_uint())
     return {"units_number": units_number, "unit_ids": unit_ids}
 
 
@@ -168,30 +168,30 @@ def command_factory_issue(reader: ReplayReader) -> Dict[str, Union[str, int, Lis
 
 def command_command_count_increase(reader: ReplayReader) -> Dict[str, Union[str, int]]:
     return {"type": "command_count_increase",
-            "command_id": reader.read_int(),
+            "command_id": reader.read_uint(),
             "delta": reader.read_int()}
 
 
 def command_command_count_decrease(reader: ReplayReader) -> Dict[str, Union[str, int]]:
     return {"type": "command_count_decrease",
-            "command_id": reader.read_int(),
+            "command_id": reader.read_uint(),
             "delta": reader.read_int()}
 
 
 def command_set_command_target(reader: ReplayReader) -> Dict[str, Union[int, TYPE_TARGET]]:
     return {"type": "set_command_target",
-            "command_id": reader.read_int(),
+            "command_id": reader.read_uint(),
             "target": _parse_target(reader)}
 
 
 def command_set_command_type(reader: ReplayReader) -> Dict[str, Union[str, int]]:
     return {"type": "set_command_type",
-            "command_id": reader.read_int(),
+            "command_id": reader.read_uint(),
             "target_id": reader.read_int()}
 
 
 def command_set_command_cells(reader: ReplayReader) -> Dict[str, Union[str, int, TYPE_LUA]]:
-    command_id = reader.read_int()
+    command_id = reader.read_uint()
     cells = reader.read_lua()
     if cells:
         reader.read(1)
@@ -204,7 +204,7 @@ def command_set_command_cells(reader: ReplayReader) -> Dict[str, Union[str, int,
 
 def command_remove_from_queue(reader: ReplayReader) -> Dict[str, int]:
     return {"type": "remove_from_queue",
-            "command_id": reader.read_int(),
+            "command_id": reader.read_uint(),
             "unit_id": reader.read_int()}
 
 

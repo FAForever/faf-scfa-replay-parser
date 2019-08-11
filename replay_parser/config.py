@@ -8,7 +8,7 @@ from typing import Callable, Any, Optional
 DEBUG = bool(os.getenv("SCFA_PARSER_DEBUG", False))
 
 
-def debug(func):
+def debug(func: Callable) -> Callable:
     """
     Used for functions debug call
     """
@@ -16,7 +16,7 @@ def debug(func):
         return func
 
     @wraps(func)
-    def wrapper(self, *args, **kwargs):
+    def wrapper(self, *args: Any, **kwargs: Any) -> Any:
         result = func(self, *args, **kwargs)
         if DEBUG:
             print("{}(*args={}, **kwargs={})".format(func.__name__, args, kwargs), "->", result)
@@ -24,8 +24,7 @@ def debug(func):
     return wrapper
 
 
-def profile_it(sort_by='cumulative'):
-    # type: (Optional[str]) -> Callable
+def profile_it(sort_by: Optional[str] = 'cumulative') -> Callable:
     """
     Profiler decorator
     ::
@@ -34,11 +33,9 @@ def profile_it(sort_by='cumulative'):
         >>>     pass
     """
 
-    def decorator(func):
-        # type: (Callable) -> Callable
+    def decorator(func: Callable) -> Callable:
         @wraps(func)
-        def inner(*args, **kwargs):
-            # type: (*Any, **Any) -> Any
+        def inner(*args: Any, **kwargs: Any) -> Any:
             profiler = cProfile.Profile()
             profiler.enable()
 

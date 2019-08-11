@@ -1,6 +1,7 @@
 import struct
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
+from exception import InvalidReplay
 from replay_parser.commands import COMMAND_PARSERS
 from replay_parser.constants import CommandStateNames, CommandStates
 from replay_parser.reader import ACCEPTABLE_DATA_TYPE, ReplayReader
@@ -81,13 +82,9 @@ class ReplayBody:
             self.replay_reader.set_data(data)
 
         buffer_size = self.replay_reader.size()
-        try:
-            while self.replay_reader.offset() + 3 <= buffer_size:
-                command_type, command_data = self.parse_command_and_get_data()
-                yield self.tick, command_type, command_data
-        except Exception:
-            # we have bad file format, or something goes wrong, we must stop
-            raise
+        while self.replay_reader.offset() + 3 <= buffer_size:
+            command_type, command_data = self.parse_command_and_get_data()
+            yield self.tick, command_type, command_data
 
     def parse_command_and_get_data(self) -> Tuple[Optional[int], Optional[bytes]]:
         """
@@ -126,7 +123,11 @@ class ReplayBody:
         Parses one command from buffer.
         """
         self.command_reader.set_data_from_bytes(data)
-        command_parser = COMMAND_PARSERS[command_type]
+        try:
+            command_parser = COMMAND_PARSERS[command_type]
+        except Exception as e:
+            raise InvalidReplay(e)
+
         command_data = command_parser(self.command_reader)
         self.process_command(command_type, command_data)
 
