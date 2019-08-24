@@ -3,7 +3,10 @@ tests = "./test.sh"
 profile = "./profile.sh"
 
 [requires]
-python_version = '3.6'
+python_version = "3.6"
+
+[packages]
+kaitaistruct = "*"
 
 [dev-packages]
 pytest = "==3.10.1"
